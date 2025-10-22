@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>paint.farmsucht.eu - Malen. Chaos. Kunst.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #nickname-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-content p {
+            color: #aaa;
+            margin-bottom: 2rem;
+        }
+
+        #nickname-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            border: 2px solid #4ecdc4;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        #nickname-input:focus {
+            outline: none;
+            border-color: #45b7d1;
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        #start-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        #start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(78, 205, 196, 0.4);
+        }
+
+        #app {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(15, 52, 96, 0.8);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timer {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.2rem;
+        }
+
+        #countdown {
+            font-weight: bold;
+            color: #4ecdc4;
+            min-width: 60px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .online-count {
+            background: rgba(78, 205, 196, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: rgba(15, 52, 96, 0.8);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            backdrop-filter: blur(10px);
+            min-width: 80px;
+        }
+
+        .tool-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .tool-label {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .color-btn {
+            width: 35px;
+            height: 35px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+            border-color: #fff;
+        }
+
+        .color-btn.active {
+            border: 3px solid #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .size-btn {
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .size-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .size-btn.active {
+            background: #4ecdc4;
+            border-color: #4ecdc4;
+        }
+
+        .clear-btn {
+            padding: 0.8rem;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0e27;
+        }
+
+        #canvas {
+            background: #fff;
+            cursor: crosshair;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #big-countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8rem;
+            font-weight: bold;
+            color: rgba(255, 107, 107, 0.3);
+            pointer-events: none;
+            text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .chat-container {
+            background: rgba(15, 52, 96, 0.8);
+            padding: 1rem;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .chat-message {
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .chat-message strong {
+            color: #4ecdc4;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        #chat-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        #send-btn {
+            padding: 0.8rem 1.5rem;
+            background: #4ecdc4;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        #send-btn:hover {
+            background: #45b7d1;
+            transform: translateY(-2px);
+        }
+
+        .reactions {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(15, 52, 96, 0.8);
+            justify-content: center;
+        }
+
+        .reaction-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reaction-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.2);
+        }
+
+        .slogan {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(15, 52, 96, 0.8);
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .slogan span {
+            color: #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div id="nickname-modal">
+        <div class="modal-content">
+            <h1>🎨 paint.farmsucht.eu</h1>
+            <p>Malen. Chaos. Kunst.</p>
+            <input type="text" id="nickname-input" placeholder="Dein Nickname..." maxlength="20">
+            <button id="start-btn">Los geht's!</button>
+        </div>
+    </div>
+
+    <div id="app">
+        <header>
+            <div class="logo">🎨 paint.farmsucht.eu</div>
+            <div class="timer">
+                <span>⏱️ Nächster Reset:</span>
+                <span id="countdown">10:00</span>
+            </div>
+            <div class="user-info">
+                <div class="online-count">👤 <span id="online-count">1</span> online</div>
+                <div>Hallo, <strong id="user-nickname"></strong></div>
+            </div>
+        </header>
+
+        <main>
+            <div class="toolbar">
+                <div class="tool-section">
+                    <div class="tool-label">Farben</div>
+                    <div class="color-palette">
+                        <div class="color-btn active" style="background: #000;" data-color="#000"></div>
+                        <div class="color-btn" style="background: #fff;" data-color="#fff"></div>
+                        <div class="color-btn" style="background: #ff6b6b;" data-color="#ff6b6b"></div>
+                        <div class="color-btn" style="background: #4ecdc4;" data-color="#4ecdc4"></div>
+                        <div class="color-btn" style="background: #45b7d1;" data-color="#45b7d1"></div>
+                        <div class="color-btn" style="background: #f9ca24;" data-color="#f9ca24"></div>
+                        <div class="color-btn" style="background: #6c5ce7;" data-color="#6c5ce7"></div>
+                        <div class="color-btn" style="background: #00b894;" data-color="#00b894"></div>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <div class="tool-label">Größe</div>
+                    <button class="size-btn" data-size="2">S</button>
+                    <button class="size-btn active" data-size="5">M</button>
+                    <button class="size-btn" data-size="10">L</button>
+                    <button class="size-btn" data-size="20">XL</button>
+                </div>
+
+                <button class="clear-btn" id="clear-local">Lokal löschen</button>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="canvas" width="1200" height="800"></canvas>
+                <div id="big-countdown"></div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-message">
+                        <strong>System:</strong> Willkommen! 🎨
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="Nachricht...">
+                    <button id="send-btn">📤</button>
+                </div>
+            </div>
+        </main>
+
+        <div class="reactions">
+            <button class="reaction-btn" data-reaction="🔥">🔥</button>
+            <button class="reaction-btn" data-reaction="❤️">❤️</button>
+            <button class="reaction-btn" data-reaction="😂">😂</button>
+            <button class="reaction-btn" data-reaction="👍">👍</button>
+            <button class="reaction-btn" data-reaction="🎨">🎨</button>
+        </div>
+
+        <div class="slogan">
+            <span>Wo jeder Strich zählt</span> (bis zum nächsten Reset)
+        </div>
+    </div>
+
+    <script>
+        // App State
+        let nickname = '';
+        let currentColor = '#000';
+        let currentSize = 5;
+        let isDrawing = false;
+        let canvas, ctx;
+        let resetTime = Date.now() + 10 * 60 * 1000; // 10 Minuten
+        let onlineUsers = new Set();
+        let drawingData = [];
+
+        // Initialize
+        document.getElementById('start-btn').addEventListener('click', startApp);
+        document.getElementById('nickname-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startApp();
+        });
+
+        function startApp() {
+            const input = document.getElementById('nickname-input').value.trim();
+            if (input) {
+                nickname = input;
+                document.getElementById('nickname-modal').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('user-nickname').textContent = nickname;
+                initCanvas();
+                startCountdown();
+                addChatMessage('System', `${nickname} ist beigetreten! 🎉`);
+                simulateOnlineUsers();
+            }
+        }
+
+        function initCanvas() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Drawing events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            // Touch events
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const mouseEvent = new MouseEvent('mouseup', {});
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            // Color buttons
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentColor = btn.dataset.color;
+                });
+            });
+
+            // Size buttons
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentSize = parseInt(btn.dataset.size);
+                });
+            });
+
+            // Clear button
+            document.getElementById('clear-local').addEventListener('click', () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                addChatMessage('System', `${nickname} hat lokal gelöscht 🗑️`);
+            });
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentSize;
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function startCountdown() {
+            setInterval(() => {
+                const now = Date.now();
+                const remaining = Math.max(0, resetTime - now);
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                
+                const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('countdown').textContent = display;
+                
+                if (remaining <= 60000) {
+                    document.getElementById('big-countdown').textContent = seconds;
+                } else {
+                    document.getElementById('big-countdown').textContent = '';
+                }
+
+                if (remaining === 0) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    resetTime = Date.now() + 10 * 60 * 1000;
+                    addChatMessage('System', '🔄 Leinwand wurde zurückgesetzt!');
+                }
+            }, 100);
+        }
+
+        // Chat
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message) {
+                addChatMessage(nickname, message);
+                input.value = '';
+            }
+        }
+
+        function addChatMessage(user, message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            messageDiv.innerHTML = `<strong>${user}:</strong> ${message}`;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Reactions
+        document.querySelectorAll('.reaction-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                addChatMessage(nickname, btn.dataset.reaction);
+            });
+        });
+
+        // Simulate online users
+        function simulateOnlineUsers() {
+            onlineUsers.add(nickname);
+            document.getElementById('online-count').textContent = onlineUsers.size;
+            
+            setInterval(() => {
+                const count = Math.floor(Math.random() * 5) + 1;
+                document.getElementById('online-count').textContent = count;
+            }, 30000);
+        }
+    </script>
+</body>
+</html>
